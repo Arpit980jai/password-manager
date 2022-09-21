@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import messagebox
+import json
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 #Password Generator Project
 import random
@@ -11,43 +12,72 @@ nr_letters = random.randint(8, 10)
 nr_symbols = random.randint(2, 4)
 nr_numbers = random.randint(2, 4)
 
-password_list = []
 
-for char in range(nr_letters):
-  password_list.append(random.choice(letters))
-
-for char in range(nr_symbols):
-  password_list += random.choice(symbols)
-
-for char in range(nr_numbers):
-  password_list += random.choice(numbers)
-
-random.shuffle(password_list)
-
-password = ""
-for char in password_list:
-  password += char
-
-print(f"Your password is: {password}")
 def generate():
+    password_list = []
+
+    for char in range(nr_letters):
+        password_list.append(random.choice(letters))
+
+    for char in range(nr_symbols):
+        password_list += random.choice(symbols)
+
+    for char in range(nr_numbers):
+        password_list += random.choice(numbers)
+
+    random.shuffle(password_list)
+
+    password = ""
+    for char in password_list:
+        password += char
     password_input.insert(0,password)
 # ---------------------------- SAVE PASSWORD ------------------------------- #
 def add():
     website=website_input.get()
     email=email_input.get()
     password=password_input.get()
+    newData={
+        website : {
+            "email":email,
+            "password":password
+        }
+    }
     is_empty=password!=""and email!=""and website!=""
-    print(is_empty)
     if is_empty:
         is_ok=messagebox.askyesno(message="Are you sure want to save ?")
     else:
         messagebox.showerror(title="Empty Feild", message="Please enter the values")
 
     if is_ok:
-        with open("data.txt",mode="a") as file:
-            file.write(f"{website} | {email} | {password} \n")
-            website_input.delete(0,END)
-            password_input.delete(0,END)
+        try:
+            with open("data.json",mode="r") as file:
+                data=json.load(file)
+        except:
+            with open("data.json", mode="w") as file:
+                json.dump(newData, file, indent=4)
+        else:
+            data.update(newData)
+            with open("data.json", mode="w") as file:
+                json.dump(data, file, indent=4)
+
+        website_input.delete(0,END)
+        password_input.delete(0,END)
+
+#----------------------------------------Search----------------------------#
+def search():
+    website = website_input.get()
+    email = email_input.get()
+    password = password_input.get()
+    with open("data.json","r")as file:
+        searchdata=json.load(file)
+        for i in searchdata:
+            try:
+                if i==website:
+                    print(searchdata[i])
+                    messagebox.showinfo(title=i,message=f"Email : {searchdata[i]['email']}\nPassword: {searchdata[i]['password']} ")
+
+            except:
+                pass
 
 
 # ---------------------------- UI SETUP ------------------------------- #
@@ -70,7 +100,7 @@ email.grid(row=2,column=0)
 password=Label(text="Password: ")
 password.grid(row=3,column=0)
 
-website_input=Entry(width=35)
+website_input=Entry(width=24)
 website_input.grid(row=1,column=1,columnspan=2)
 website_input.focus()
 email_input=Entry(width=35)
@@ -82,6 +112,8 @@ password_input.grid(row=3,column=1)
 
 generate=Button(text="Generate",command=generate)
 generate.grid(row=3,column=2)
+search=Button(text="Search",command=search)
+search.grid(row=1,column=2)
 
 add=Button(text="Add",width=31,command=add)
 add.grid(row=4,column=1,columnspan=2)
